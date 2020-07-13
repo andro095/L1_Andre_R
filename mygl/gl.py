@@ -13,7 +13,7 @@ def glWord(wd):
 
 # Reserva de espacio de memoria de 4 bytes para un dword
 def glDword(dwd):
-    return st.pack('=h', dwd)
+    return st.pack('=l', dwd)
 
 
 # Retorna el color deseado por el usuario
@@ -25,18 +25,15 @@ def NDCtoWC(size, stp, num):
     return int(((num + 1) * (size / 2)) + stp)
 
 
-WHITE = glColor(1, 1, 1)
-
-
 # Clase para todas las operaciones relacionadas con el escritor de imágenes
 class ImageCreator(object):
     # Constructor del objeto
-    def __init__(self, w, h, initColor, vColor):
-        self.glCreateWindow(self, w, h, bg=initColor)
+    def __init__(self, w, h, bgColor, vColor):
+        self.glCreateWindow(w, h, bgColor)
         self.vColor = vColor
 
     # Creador del framebuffer
-    def glCreateWindow(self, w, h, bg=glColor(0, 0, 0)):
+    def glCreateWindow(self, w, h, bg):
         self.width = w
         self.height = h
         self.bgcolor = bg
@@ -62,13 +59,14 @@ class ImageCreator(object):
 
     # Cambiar vColor
     def glVertexColor(self, r, g, b):
-        self.bgcolor = glColor(r, g, b)
+        self.vColor = glColor(r, g, b)
 
     # Función para dibujar un punto
     def glVertex(self, x, y):
         if x > 1 or x < -1 or y > 1 or y < -1: return False
         self.framebuffer[NDCtoWC(self.VPheight, self.VPYstart, y)][
             NDCtoWC(self.VPwidth, self.VPXstart, x)] = self.vColor
+        return True
 
     # Función para hacer la image
     def glFinish(self, filename):
@@ -77,7 +75,9 @@ class ImageCreator(object):
         file.write(bytes('B'.encode('ascii')))
         file.write(bytes('M'.encode('ascii')))
 
+        print("Aqui llego 2")
         file.write(glDword(14 + 40 + self.width * self.height * 3))
+        print("Aqui llego")
         file.write(glDword(0))
         file.write(glDword(14 + 40))
 
