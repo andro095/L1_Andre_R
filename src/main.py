@@ -22,7 +22,6 @@ def create_image():
         b = int(input("b: "))/255
         vColor = glColor(r, g, b)
         image = ImageCreator(w, h, bgColor, vColor)
-        print("Ya pasé")
         return image
     except:
         return False
@@ -109,8 +108,8 @@ if __name__ == '__main__':
                     print("Todavia no ha creado su imagen")
                 else:
                     try:
-                        x = float(input('Ingrese una coordenada x del -1 al 1'))
-                        y = float(input('Ingrese una coordenada y del -1 al 1'))
+                        x = float(input('Ingrese una coordenada x del -1 al 1: '))
+                        y = float(input('Ingrese una coordenada y del -1 al 1: '))
                         img.glVertex(x, y)
                     except:
                         print("Ingrese datos completos")

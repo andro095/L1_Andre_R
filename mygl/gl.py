@@ -75,9 +75,7 @@ class ImageCreator(object):
         file.write(bytes('B'.encode('ascii')))
         file.write(bytes('M'.encode('ascii')))
 
-        print("Aqui llego 2")
         file.write(glDword(14 + 40 + self.width * self.height * 3))
-        print("Aqui llego")
         file.write(glDword(0))
         file.write(glDword(14 + 40))
 
