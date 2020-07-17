@@ -68,6 +68,56 @@ class ImageCreator(object):
             NDCtoWC(self.VPwidth, self.VPXstart, x)] = self.vColor
         return True
 
+    def glVertexWC(self, x, y):
+        self.framebuffer[y][x] = self.vColor
+
+    def glLine(self, xi, yi, xf, yf):
+        if xi > 1 or yi > 1 or xf > 1 or yf > 1 or xi < -1 or yi < -1 or xf < -1 or yf < -1:
+            return False
+
+        xi = NDCtoWC(self.VPwidth, self.VPXstart, xi)
+        xf = NDCtoWC(self.VPwidth, self.VPXstart, xf)
+        yi = NDCtoWC(self.VPheight, self.VPYstart, yi)
+        yf = NDCtoWC(self.VPheight, self.VPYstart, yf)
+
+        x = abs(xf - xi)
+        y = abs(yf - yi)
+
+        if y > x:
+            temp = xi
+            xi = yi
+            y1 = temp
+            temp = xf
+            xf = yf
+            yf = temp
+
+        if xi > xf:
+            temp = xi
+            xi = xf
+            xf = temp
+            temp = yi
+            yi = yf
+            yf = temp
+
+        x = abs(xf - xi)
+        y = abs(yf - yi)
+
+        ac = 0
+        top = 0.5
+        yinc = yi
+
+        for x in range(xi, xf+1):
+            if y > x:
+                self.glVertexWC(yinc, x)
+            else:
+                self.glVertexWC(x, yinc)
+            ac = ac + y/x
+            if ac >= top:
+                yinc = yinc - 1 if yi > yf else yinc + 1
+                top = top + 1
+
+
+
     # Función para hacer la image
     def glFinish(self, filename):
         file = open(filename, 'wb')
