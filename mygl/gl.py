@@ -83,6 +83,8 @@ class ImageCreator(object):
         x = abs(xf - xi)
         y = abs(yf - yi)
 
+        comp = y > x
+
         if y > x:
             temp = xi
             xi = yi
@@ -106,15 +108,17 @@ class ImageCreator(object):
         top = 0.5
         yinc = yi
 
-        for x in range(xi, xf+1):
-            if y > x:
-                self.glVertexWC(yinc, x)
+        for xc in range(xi, xf+1):
+            if comp:
+                self.glVertexWC(yinc, xc)
             else:
-                self.glVertexWC(x, yinc)
+                self.glVertexWC(xc, yinc)
             ac = ac + y/x
             if ac >= top:
                 yinc = yinc - 1 if yi > yf else yinc + 1
                 top = top + 1
+
+        return True
 
 
 

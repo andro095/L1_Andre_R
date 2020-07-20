@@ -2,7 +2,7 @@ from mygl.gl import glColor, ImageCreator
 
 menu = "Menú:\n   1. Crear una nueva imagen\n   2. Definir un ViewPort\n   3. Borrar todo punto realizado (Clear())\n" \
        "   4. Cambiar el color del clear\n   5. Dibujar un punto\n   6. Cambiar el color de dibujado\n   7. Imprimir " \
-       "la imagen\n   8. Salir del programa\nIngrese una opción: "
+       "la imagen\n   8. Realizar una linea\n   9. Salir del programa\nIngrese una opción: "
 
 
 def create_image():
@@ -12,14 +12,14 @@ def create_image():
         h = int(input("   Ingrese el alto de su imagen: "))
         print("Colores: ")
         print("Ingrese el color de fondo en formato rgb")
-        r = int(input("r: "))/255
-        g = int(input("g: "))/255
-        b = int(input("b: "))/255
+        r = int(input("r: ")) / 255
+        g = int(input("g: ")) / 255
+        b = int(input("b: ")) / 255
         bgColor = glColor(r, g, b)
         print("Ingrese el color de dibujado en formato rgb")
-        r = int(input("r: "))/255
-        g = int(input("g: "))/255
-        b = int(input("b: "))/255
+        r = int(input("r: ")) / 255
+        g = int(input("g: ")) / 255
+        b = int(input("b: ")) / 255
         vColor = glColor(r, g, b)
         image = ImageCreator(w, h, bgColor, vColor)
         return image
@@ -49,10 +49,10 @@ if __name__ == '__main__':
     bandera = False
     img = ''
     op = 0
-    while op != 8:
+    while op != 9:
         try:
             op = int(input(menu))
-            if op < 1 or op > 8:
+            if op < 1 or op > 9:
                 raise Exception()
             if op == 1:
                 while not bandera:
@@ -98,9 +98,9 @@ if __name__ == '__main__':
                     print("Todavia no ha creado su imagen")
                 else:
                     print("Ingrese el color de fondo en formato rgb")
-                    r = int(input("r: "))/255
-                    g = int(input("g: "))/255
-                    b = int(input("b: "))/255
+                    r = int(input("r: ")) / 255
+                    g = int(input("g: ")) / 255
+                    b = int(input("b: ")) / 255
                     img.glClearColor(r, g, b)
 
             if op == 5:
@@ -119,9 +119,9 @@ if __name__ == '__main__':
                     print("Todavia no ha creado su imagen")
                 else:
                     print("Ingrese el color de dibujado en formato rgb")
-                    r = int(input("r: "))/255
-                    g = int(input("g: "))/255
-                    b = int(input("b: "))/255
+                    r = int(input("r: ")) / 255
+                    g = int(input("g: ")) / 255
+                    b = int(input("b: ")) / 255
                     img.glVertexColor(r, g, b)
 
             if op == 7:
@@ -130,5 +130,17 @@ if __name__ == '__main__':
                 else:
                     namefile = input("Ingrese el nombre del archivo sin su extensión: ") + '.bmp'
                     img.glFinish(namefile)
+
+            if op == 8:
+                try:
+                    print('Ingrese las coordenadas de -1 a 1')
+                    xi = float(input("Ingrese la coordenada x inicial"))
+                    yi = float(input("Ingrese la coordenada y inicial"))
+                    xf = float(input("Ingrese la coordenada x final"))
+                    yf = float(input("Ingrese la coordenada y final"))
+                    if not img.glLine(xi, yi, xf, yf):
+                        raise Exception
+                except:
+                    print('Ingrese números válidos')
         except:
             print("Ingrese una opción válida")
