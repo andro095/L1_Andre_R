@@ -1,9 +1,10 @@
-from mygl.gl import glColor, ImageCreator
-
+from gl import glColor, ImageCreator, Mobj
 menu = "Menú:\n   1. Crear una nueva imagen\n   2. Definir un ViewPort\n   3. Borrar todo punto realizado (Clear())\n" \
        "   4. Cambiar el color del clear\n   5. Dibujar un punto\n   6. Cambiar el color de dibujado\n   7. Imprimir " \
-       "la imagen\n   8. Realizar una linea\n   9. Salir del programa\nIngrese una opción: "
+       "la imagen\n   8. Realizar una linea\n   9. Dibujar un modelo obj\n   10. Salir del programa\nIngrese una " \
+       "opción: "
 
+oplimit = 10
 
 def create_image():
     try:
@@ -48,33 +49,21 @@ if __name__ == '__main__':
     print("Bienvenido al programa. Iniciemos creando una imagen")
     bandera = False
     img = ''
+    mobj = ''
     op = 0
-    while op != 9:
+    while op != oplimit:
         try:
             op = int(input(menu))
-            if op < 1 or op > 9:
+            if op < 1 or op > oplimit:
                 raise Exception()
             if op == 1:
                 while not bandera:
                     img = create_image()
                     if img:
-                        res = ''
-                        while not (res == 'y' or res == 'n'):
-                            res = input("Desea utilizar un viewport (y/n): ")
-
-                        if res == 'y':
-                            bandera2 = False
-                            while not bandera2:
-                                res2 = create_viewport(img)
-                                if res2:
-                                    bandera2 = True
-                                else:
-                                    print('Ingrese valores correctos')
-                        else:
-                            img.glViewPort()
+                        print("Framebuffer creado con exito")
                         bandera = True
                     else:
-                        print("Ingrese los datos de manera correcta")
+                        print('Ingrese los datos correctos')
 
             if op == 2:
                 if img == '':
@@ -132,15 +121,33 @@ if __name__ == '__main__':
                     img.glFinish(namefile)
 
             if op == 8:
-                try:
-                    print('Ingrese las coordenadas de -1 a 1')
-                    xi = float(input("Ingrese la coordenada x inicial"))
-                    yi = float(input("Ingrese la coordenada y inicial"))
-                    xf = float(input("Ingrese la coordenada x final"))
-                    yf = float(input("Ingrese la coordenada y final"))
-                    if not img.glLine(xi, yi, xf, yf):
-                        raise Exception
-                except:
-                    print('Ingrese números válidos')
+                if img == '':
+                    print("Todavia no ha creado su imagen")
+                else:
+                    try:
+                        print('Ingrese las coordenadas de -1 a 1')
+                        xi = float(input("Ingrese la coordenada x inicial"))
+                        yi = float(input("Ingrese la coordenada y inicial"))
+                        xf = float(input("Ingrese la coordenada x final"))
+                        yf = float(input("Ingrese la coordenada y final"))
+                        if not img.glLine(xi, yi, xf, yf):
+                            raise Exception
+                    except:
+                        print('Ingrese números válidos')
+
+            if op == 9:
+                if img == '':
+                    print("Todavia no ha creado su imagen")
+                else:
+                    try:
+                        namefile = input("ingrese el nombre del archivo, con su extensión y ubicación: ")
+                        xStart = int(input('Ingrese la coordenada x desde donde se dibujara el modelo: '))
+                        yStart = int(input('Ingrese la coordenada y desde donde se dibujara el modelo: '))
+                        xScale = int(input('Ingrese la escala x con la que se dibujara el modelo: '))
+                        yScale = int(input('Ingrese la escala y con la que se dibujara el modelo: '))
+                        img.glModel(namefile, xStart, yStart, xScale, yScale)
+                    except:
+                        print('Ingrese valores correctos')
+
         except:
             print("Ingrese una opción válida")
