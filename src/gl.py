@@ -62,7 +62,7 @@ class ImageCreator(object):
         self.height = h
         self.bgcolor = bg
         self.glClear()
-        self.glViewPort(w, h, 0, 0)
+        self.glViewPort(w - 1, h - 1, 0, 0)
 
     # Creador del viewport
     def glViewPort(self, w=0, h=0, x=0, y=0):
@@ -89,16 +89,20 @@ class ImageCreator(object):
     # Función para dibujar un punto
     def glVertex(self, x, y):
         if x > 1 or x < -1 or y > 1 or y < -1: return False
-        try:
-            self.framebuffer[NDCtoWC(self.VPheight, self.VPYstart, y)][
-            NDCtoWC(self.VPwidth, self.VPXstart, x)] = self.vColor
-        except:
-            pass
+        xWc = NDCtoWC(self.VPwidth, self.VPXstart, x)
+        yWc = NDCtoWC(self.VPheight, self.VPYstart, y)
+        self.glVertexWC(xWc, yWc)
         return True
 
     def glVertexWC(self, x, y):
         try:
             self.framebuffer[y][x] = self.vColor
+        except:
+            pass
+
+    def glVertexTPWC(self, x, y):
+        try:
+            self.tempframebuffer[y][x] = self.vColor
         except:
             pass
 
@@ -145,21 +149,11 @@ class ImageCreator(object):
                     yinc = yinc - 1 if yi > yf else yinc + 1
                     top = top + 1
 
-    def glLine(self, xi, yi, xf, yf):
-        if xi > 1 or yi > 1 or xf > 1 or yf > 1 or xi < -1 or yi < -1 or xf < -1 or yf < -1:
-            return False
-
-        xi = NDCtoWC(self.VPwidth, self.VPXstart, xi)
-        xf = NDCtoWC(self.VPwidth, self.VPXstart, xf)
-        yi = NDCtoWC(self.VPheight, self.VPYstart, yi)
-        yf = NDCtoWC(self.VPheight, self.VPYstart, yf)
-
+    def glLineTPWC(self, xi, yi, xf, yf):
         x = abs(xf - xi)
         y = abs(yf - yi)
 
         comp = y > x
-
-        print(comp)
 
         if y > x:
             temp = xi
@@ -168,11 +162,6 @@ class ImageCreator(object):
             temp = xf
             xf = yf
             yf = temp
-
-        print(xi)
-        print(xf)
-        print(yi)
-        print(yf)
 
         if xi > xf:
             temp = xi
@@ -187,19 +176,111 @@ class ImageCreator(object):
 
         ac = 0
         top = 0.5
-        yinc = yi
+        try:
+            p = y / x
+        except ZeroDivisionError:
+            pass
+        else:
+            yinc = yi
+            for xc in range(xi, xf + 1):
+                if comp:
+                    self.glVertexTPWC(yinc, xc)
+                else:
+                    self.glVertexTPWC(xc, yinc)
+                ac = ac + p
+                if ac >= top:
+                    yinc = yinc - 1 if yi > yf else yinc + 1
+                    top = top + 1
 
-        for xc in range(xi, xf + 1):
-            if comp:
-                self.glVertexWC(yinc, xc)
-            else:
-                self.glVertexWC(xc, yinc)
-            ac = ac + y / x
-            if ac >= top:
-                yinc = yinc - 1 if yi > yf else yinc + 1
-                top = top + 1
+    def glLine(self, xi, yi, xf, yf):
+        if xi > 1 or yi > 1 or xf > 1 or yf > 1 or xi < -1 or yi < -1 or xf < -1 or yf < -1:
+            return False
+
+        xi = NDCtoWC(self.VPwidth, self.VPXstart, xi)
+        xf = NDCtoWC(self.VPwidth, self.VPXstart, xf)
+        yi = NDCtoWC(self.VPheight, self.VPYstart, yi)
+        yf = NDCtoWC(self.VPheight, self.VPYstart, yf)
+
+        self.glLineWC(xi, yi, xf, yf)
 
         return True
+
+    # Creamos un poligono
+    def glPolygon(self, polcords):
+        # Variables para cachar el x y y mínimo y máximo
+        xmin, ymin, xmax, ymax = polcords[0][0], polcords[0][1], polcords[0][0], polcords[0][1]
+        # Dibujamos el contorno del polygono
+        for index in range(len(polcords)):
+            # Averiguamos La coordenadas mínima y máxima x y y
+            xmin = polcords[index][0] if xmin > polcords[index][0] else xmin
+            xmax = polcords[index][0] if xmax < polcords[index][0] else xmax
+            ymin = polcords[index][1] if ymin > polcords[index][1] else ymin
+            ymax = polcords[index][1] if ymax < polcords[index][1] else ymax
+
+        polcordsmodified = []
+
+        for x in range(len(polcords)):
+            polcordsmodified.append([polcords[x][0] - xmin, polcords[x][1] - ymin])
+
+        self.tempframebuffer = [[self.bgcolor for x in range(xmax - xmin + 1)] for y in range(ymax - ymin + 1)]
+
+        for index in range(len(polcordsmodified)):
+            xi = polcordsmodified[index][0]
+            xf = polcordsmodified[(index + 1) % len(polcordsmodified)][0]
+            yi = polcordsmodified[index][1]
+            yf = polcordsmodified[(index + 1) % len(polcordsmodified)][1]
+
+            self.glLineTPWC(xi, yi, xf, yf)
+
+        height = len(self.tempframebuffer)
+        width = len(self.tempframebuffer[0])
+
+        for y in range(height):
+            for x in range(width):
+                if self.tempframebuffer[y][x] != self.vColor:
+                    toppoint = False
+                    bottompoint = False
+                    leftpoint = False
+                    rightpoint = False
+                    count = y
+                    if count != height - 1:
+                        while count < height - 1 and not toppoint:
+                            if self.tempframebuffer[count + 1][x] == self.vColor:
+                                toppoint = True
+                            else:
+                                count += 1
+
+                    count = y
+                    if count != 0:
+                        while count > 0 and not bottompoint:
+                            if self.tempframebuffer[count - 1][x] == self.vColor:
+                                bottompoint = True
+                            else:
+                                count -= 1
+
+                    count = x
+                    if count != width - 1:
+                        while count < width - 1 and not rightpoint:
+                            if self.tempframebuffer[y][count + 1] == self.vColor:
+                                rightpoint = True
+                            else:
+                                count += 1
+
+                    count = x
+                    if count != 0:
+                        while count > 0 and not leftpoint:
+                            if self.tempframebuffer[y][count - 1] == self.vColor:
+                                leftpoint = True
+                            else:
+                                count -= 1
+
+                    if toppoint and bottompoint and rightpoint and leftpoint:
+                        self.glVertexTPWC(x, y)
+
+        for y in range(height):
+            for x in range(width):
+                if self.tempframebuffer[y][x] == self.vColor:
+                    self.framebuffer[y + ymin][x + xmin] = self.tempframebuffer[y][x]
 
     # Cargamos el modelo A dibujar
     def glModel(self, namefile, xSt, ySt, xSc, ySc):
