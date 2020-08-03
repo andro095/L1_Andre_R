@@ -179,7 +179,7 @@ if __name__ == '__main__':
                         print('Ingresando coordenadas manualmente.')
                         x = 0
                         y = 0
-                        while x >= 0 or y >= 0:
+                        while x >= 0 and y >= 0:
                             try:
                                 x = int(input('Ingrese la cordenada x (Ingrese numero negativo para dejar de ingresar '
                                               'coordenadas): '))
