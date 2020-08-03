@@ -1,10 +1,12 @@
 from gl import glColor, ImageCreator, Mobj
+
 menu = "Menú:\n   1. Crear una nueva imagen\n   2. Definir un ViewPort\n   3. Borrar todo punto realizado (Clear())\n" \
        "   4. Cambiar el color del clear\n   5. Dibujar un punto\n   6. Cambiar el color de dibujado\n   7. Imprimir " \
-       "la imagen\n   8. Realizar una linea\n   9. Dibujar un modelo obj\n   10. Salir del programa\nIngrese una " \
-       "opción: "
+       "la imagen\n   8. Realizar una linea\n   9. Dibujar un modelo obj\n   10. Rellenar un poligono\n   11. Salir " \
+       "del programa\nIngrese una opción: "
 
-oplimit = 10
+oplimit = 11
+
 
 def create_image():
     try:
@@ -148,6 +150,52 @@ if __name__ == '__main__':
                         img.glModel(namefile, xStart, yStart, xScale, yScale)
                     except:
                         print('Ingrese valores correctos')
+            if op == 10:
+                if img == '':
+                    print("Todavia no ha creado su imagen")
+                else:
+                    op = ''
+                    while op.lower() != 'y' and op.lower() != 'n':
+                        op = input('Tiene un archivo txt con el polígono que desea agregar? (y/n): ')
+                    arr = []
+                    if op == 'y':
+                        print('Las coordenadas deben estar ingresadas en tuplas (x,y), una por linea para funcionar. '
+                              'Puede consultar a los ejemplos de formato adjuntos a este programa para más detalles')
+                        namefile = input('Ingrese el nombre de su archivo con su extensión: ')
+                        try:
+                            f = open(namefile, 'r')
+                            arr = [list(map(int, linea.replace('\n', '').replace('(', '').replace(')', '').replace(' ', '').split(','))) for linea in f.readlines()]
+                        except:
+                            print('Error el archivo no se encuentra o no se puede leer')
+                        finally:
+                            f.close()
+
+                        if len(arr) > 2:
+                            img.glPolygon(arr)
+                        else:
+                            print('No ingreso los suficientes vertices')
+
+                    else:
+                        print('Ingresando coordenadas manualmente.')
+                        x = 0
+                        y = 0
+                        while x >= 0 or y >= 0:
+                            try:
+                                x = int(input('Ingrese la cordenada x (Ingrese numero negativo para dejar de ingresar '
+                                              'coordenadas): '))
+                                if x >= 0:
+                                    y = int(input('Ingrese la cordenada y (Ingrese numero negativo para dejar de '
+                                                  'ingresar coordenadas): '))
+
+                                if x >= 0 and y >= 0:
+                                    arr.append((x, y))
+
+                            except:
+                                print('Ingrese números correctos')
+                        if len(arr) > 2:
+                            img.glPolygon(arr)
+                        else:
+                            print('No ingreso los suficientes vertices')
 
         except:
             print("Ingrese una opción válida")
