@@ -77,6 +77,7 @@ class ImageCreator(object):
     # Aclarar el background con su color
     def glClear(self):
         self.framebuffer = [[self.bgcolor for x in range(self.width)] for y in range(self.height)]
+        self.dbf = [[-float('inf') for x in range(self.width)] for y in range(self.height)]
 
     # Cambiar el bgcolor
     def glClearColor(self, r, g, b):
@@ -87,16 +88,18 @@ class ImageCreator(object):
         self.vColor = glColor(r, g, b)
 
     # Función para dibujar un punto
-    def glVertex(self, x, y):
+    def glVertex(self, x, y, scolor=None):
         if x > 1 or x < -1 or y > 1 or y < -1: return False
         xWc = NDCtoWC(self.VPwidth, self.VPXstart, x)
         yWc = NDCtoWC(self.VPheight, self.VPYstart, y)
-        self.glVertexWC(xWc, yWc)
+        self.glVertexWC(xWc, yWc, scolor)
         return True
 
-    def glVertexWC(self, x, y):
+    def glVertexWC(self, x, y, scolor=None):
+        if scolor is None:
+            scolor = self.vColor
         try:
-            self.framebuffer[y][x] = self.vColor
+            self.framebuffer[y][x] = scolor
         except:
             pass
 
@@ -295,6 +298,39 @@ class ImageCreator(object):
                 xf = round((vf[0] * xSc) + xSt)
                 yf = round((vf[1] * ySc) + ySt)
                 self.glLineWC(xi, yi, xf, yf)
+
+    #Calcular coordenadas baricentricas
+    def glBcCords(self, point, v1, v2, v3):
+        bcarr = []
+        try:
+            bcarr.append((((v2[1] - v3[1]) * (point[0] - v3[0])) + ((v3[0] - v2[0]) * (point[1] - v3[1]))) / (((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
+
+            bcarr.append((((v3[1] - v3[1]) * (point[0] - v3[0])) + ((v1[0] - v2[0]) * (point[1] - v3[1]))) / (((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
+
+            bcarr.append(1 - bcarr[0] - bcarr[1])
+        except:
+            for x in range(3):
+                bcarr.append(-1, -1, -1)
+        return bcarr
+
+    def glTriangle(self, v1, v2, v3, color=None):
+        if color is None:
+            color = self.vColor
+        xmin = v1[0] if v1[0] < v2[0] and v1[0] < v3[0] else v2[0] if v2[0] < v1[0] and v2[0] < v3[0] else v3[0]
+        xmax = v1[0] if v1[0] > v2[0] and v1[0] > v3[0] else v2[0] if v2[0] > v1[0] and v2[0] > v3[0] else v3[0]
+        ymin = v1[1] if v1[1] < v2[1] and v1[1] < v3[1] else v2[1] if v2[1] < v1[1] and v2[1] < v3[1] else v3[1]
+        ymax = v1[1] if v1[1] > v2[1] and v1[1] > v3[1] else v2[1] if v2[1] > v1[1] and v2[1] > v3[1] else v3[1]
+
+        for x in range(xmin, xmax + 1):
+            for y in range(ymin, ymax + 1):
+                bcarr = self.glBcCords((x, y), v1, v2, v3)
+
+                if bcarr[0] >= 0 and bcarr[1] >= 0 and bcarr[2] >= 0:
+                    dp = v1[2] * bcarr[0] + v2[2] * bcarr[1] + v3[2] * bcarr[2]
+
+                    if dp > self.dbf[y][x]:
+                        self.dbf[y][x] = dp      
+                        self.glVertexWC(x, y, color)
 
     # Función para hacer la image
     def glFinish(self, filename):
