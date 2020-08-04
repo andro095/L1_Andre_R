@@ -1,4 +1,5 @@
 import struct as st
+import mynumpy as mn
 
 
 # Reserva de espacio de memoria de 1 byte para un char
@@ -286,31 +287,59 @@ class ImageCreator(object):
                     self.framebuffer[y + ymin][x + xmin] = self.tempframebuffer[y][x]
 
     # Cargamos el modelo A dibujar
-    def glModel(self, namefile, xSt, ySt, xSc, ySc):
+    def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, isWire=False):
         mymodel = Mobj(namefile)
         for elem in mymodel.faces:
             vCount = len(elem)
-            for x in range(vCount):
-                vi = mymodel.vertex[elem[x][0] - 1]
-                vf = mymodel.vertex[elem[(x + 1) % vCount][0] - 1]
-                xi = round((vi[0] * xSc) + xSt)
-                yi = round((vi[1] * ySc) + ySt)
-                xf = round((vf[0] * xSc) + xSt)
-                yf = round((vf[1] * ySc) + ySt)
-                self.glLineWC(xi, yi, xf, yf)
+            if isWire:
+                for x in range(vCount):
+                    vi = mymodel.vertex[elem[x][0] - 1]
+                    vf = mymodel.vertex[elem[(x + 1) % vCount][0] - 1]
+                    xi = round((vi[0] * xSc) + xSt)
+                    yi = round((vi[1] * ySc) + ySt)
+                    xf = round((vf[0] * xSc) + xSt)
+                    yf = round((vf[1] * ySc) + ySt)
+                    self.glLineWC(xi, yi, xf, yf)
+            else:
+                a = mymodel.vertex[elem[0][0] - 1]
+                b = mymodel.vertex[elem[1][0] - 1]
+                c = mymodel.vertex[elem[2][0] - 1]
 
-    #Calcular coordenadas baricentricas
+                a = (round(a[0] * xSc + xSt), round(a[1] * ySc + ySt), round(a[2] * zSc + zSt))
+                b = (round(b[0] * xSc + xSt), round(b[1] * ySc + ySt), round(b[2] * zSc + zSt))
+                c = (round(c[0] * xSc + xSt), round(c[1] * ySc + ySt), round(c[2] * zSc + zSt))
+
+                tnk = [0, 0, 1]
+
+                nr = mn.mcross(mn.msubstract(b, a), mn.substract(c, a))
+                norm = mn.mnorm(nr)
+                nrdiv = [elem / norm for elem in nr]
+
+                itt = mn.mdot(nrdiv, tnk)
+
+                if itt >= 0:
+                    self.glTriangle(a, b, c, glColor(itt, itt, itt))
+
+                if vCount > 3:
+                    d = mymodel.vertex[elem[3][0] -1]
+                    d = (round(d[0] * xSc + xSt), round(d[1] * ySc + ySt), round(d[2] * zSc + zSt))
+                if itt >= 0:
+                    self.glTriangle(a, c, d, glColor(itt, itt, itt))
+
+    # Calcular coordenadas baricentricas
     def glBcCords(self, point, v1, v2, v3):
         bcarr = []
         try:
-            bcarr.append((((v2[1] - v3[1]) * (point[0] - v3[0])) + ((v3[0] - v2[0]) * (point[1] - v3[1]))) / (((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
+            bcarr.append((((v2[1] - v3[1]) * (point[0] - v3[0])) + ((v3[0] - v2[0]) * (point[1] - v3[1]))) / (
+                    ((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
 
-            bcarr.append((((v3[1] - v3[1]) * (point[0] - v3[0])) + ((v1[0] - v2[0]) * (point[1] - v3[1]))) / (((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
+            bcarr.append((((v3[1] - v3[1]) * (point[0] - v3[0])) + ((v1[0] - v2[0]) * (point[1] - v3[1]))) / (
+                    ((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
 
             bcarr.append(1 - bcarr[0] - bcarr[1])
         except:
             for x in range(3):
-                bcarr.append(-1, -1, -1)
+                bcarr.append(-1)
         return bcarr
 
     def glTriangle(self, v1, v2, v3, color=None):
@@ -329,7 +358,7 @@ class ImageCreator(object):
                     dp = v1[2] * bcarr[0] + v2[2] * bcarr[1] + v3[2] * bcarr[2]
 
                     if dp > self.dbf[y][x]:
-                        self.dbf[y][x] = dp      
+                        self.dbf[y][x] = dp
                         self.glVertexWC(x, y, color)
 
     # Función para hacer la image

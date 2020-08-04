@@ -1,5 +1,6 @@
 from gl import ImageCreator, glColor
-
+import mynumpy as np
+import numpy as n
 r = ImageCreator(800, 600, glColor(0, 0, 0), glColor(1, 0, 0))
 
 # r.glPolygon([(165, 380), (185, 360), (180, 330), (207, 345), (233, 330), (230, 360), (250, 380), (220, 385), (205, 410),
@@ -19,6 +20,24 @@ r = ImageCreator(800, 600, glColor(0, 0, 0), glColor(1, 0, 0))
 # r.glPolygon([(682, 175), (708, 120), (735, 148), (739, 170)])
 
 
-r.glTriangle((100, 150, 0), (200, 250, 100), (300, 350, 200))
+#r.glTriangle((100, 150, 0), (200, 250, 100), (300, 350, 200))
+
+arr = [1, 2, 3]
+arr2 = [4, 5, 6]
+
+ares = np.mcross(arr, arr2)
+
+norm = np.mnorm([-4, -3, -2, -1, 0, 1, 2, 3, 4])
+
+aresdiv = []
+
+for elem in ares:
+    aresdiv.append(elem / norm)
+
+print(aresdiv)
+
+#print(np.mcross(arr, arr2)/np.mnorm([-4, -3, -2, -1, 0, 1, 2, 3, 4]))
+
+
 
 # r.glFinish('holi.bmp')
