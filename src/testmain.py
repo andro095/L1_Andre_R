@@ -1,8 +1,8 @@
 from gl import ImageCreator, glColor
 import mynumpy as np
-import numpy as n
 r = ImageCreator(1000, 1000, glColor(0, 0, 0), glColor(1, 1, 1))
 
+# Este es solo un main de pruebas el otro máin es el real
 
 #r.glTriangle((100, 150, 0), (200, 250, 100), (300, 350, 200))
 
