@@ -30,7 +30,8 @@ def NDCtoWC(size, stp, num):
 class Mobj(object):
 
     def __init__(self, fname):
-        self.lines = open(fname, 'r').read().splitlines()
+        with open(fname, 'r') as file:
+            self.lines = file.read().splitlines()
         self.vertex = []
         self.norms = []
         self.tcords = []
@@ -305,13 +306,13 @@ class ImageCreator(object):
                 b = mymodel.vertex[elem[1][0] - 1]
                 c = mymodel.vertex[elem[2][0] - 1]
 
-                a = (round(a[0] * xSc + xSt), round(a[1] * ySc + ySt), round(a[2] * zSc + zSt))
-                b = (round(b[0] * xSc + xSt), round(b[1] * ySc + ySt), round(b[2] * zSc + zSt))
-                c = (round(c[0] * xSc + xSt), round(c[1] * ySc + ySt), round(c[2] * zSc + zSt))
+                a = [round(a[0] * xSc + xSt), round(a[1] * ySc + ySt), round(a[2] * zSc + zSt)]
+                b = [round(b[0] * xSc + xSt), round(b[1] * ySc + ySt), round(b[2] * zSc + zSt)]
+                c = [round(c[0] * xSc + xSt), round(c[1] * ySc + ySt), round(c[2] * zSc + zSt)]
 
                 tnk = [0, 0, 1]
 
-                nr = mn.mcross(mn.msubstract(b, a), mn.substract(c, a))
+                nr = mn.mcross(mn.msubstract(b, a), mn.msubstract(c, a))
                 norm = mn.mnorm(nr)
                 nrdiv = [elem / norm for elem in nr]
 
@@ -321,20 +322,20 @@ class ImageCreator(object):
                     self.glTriangle(a, b, c, glColor(itt, itt, itt))
 
                 if vCount > 3:
-                    d = mymodel.vertex[elem[3][0] -1]
+                    d = mymodel.vertex[elem[3][0] - 1]
                     d = (round(d[0] * xSc + xSt), round(d[1] * ySc + ySt), round(d[2] * zSc + zSt))
-                if itt >= 0:
-                    self.glTriangle(a, c, d, glColor(itt, itt, itt))
+                    if itt >= 0:
+                        self.glTriangle(a, c, d, glColor(itt, itt, itt))
 
     # Calcular coordenadas baricentricas
     def glBcCords(self, point, v1, v2, v3):
         bcarr = []
         try:
-            bcarr.append((((v2[1] - v3[1]) * (point[0] - v3[0])) + ((v3[0] - v2[0]) * (point[1] - v3[1]))) / (
-                    ((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
+            bcarr.append((((v2[1] - v3[1]) * (point[0] - v3[0])) + ((v3[0] - v2[0]) * (point[1] - v3[1]))) /
+                         (((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1] - v3[1]))))
 
-            bcarr.append((((v3[1] - v3[1]) * (point[0] - v3[0])) + ((v1[0] - v2[0]) * (point[1] - v3[1]))) / (
-                    ((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1]) - v3[1])))
+            bcarr.append((((v3[1] - v1[1]) * (point[0] - v3[0])) + ((v1[0] - v3[0]) * (point[1] - v3[1]))) /
+                         (((v2[1] - v3[1]) * (v1[0] - v3[0])) + ((v3[0] - v2[0]) * (v1[1] - v3[1]))))
 
             bcarr.append(1 - bcarr[0] - bcarr[1])
         except:
@@ -345,10 +346,11 @@ class ImageCreator(object):
     def glTriangle(self, v1, v2, v3, color=None):
         if color is None:
             color = self.vColor
-        xmin = v1[0] if v1[0] < v2[0] and v1[0] < v3[0] else v2[0] if v2[0] < v1[0] and v2[0] < v3[0] else v3[0]
-        xmax = v1[0] if v1[0] > v2[0] and v1[0] > v3[0] else v2[0] if v2[0] > v1[0] and v2[0] > v3[0] else v3[0]
-        ymin = v1[1] if v1[1] < v2[1] and v1[1] < v3[1] else v2[1] if v2[1] < v1[1] and v2[1] < v3[1] else v3[1]
-        ymax = v1[1] if v1[1] > v2[1] and v1[1] > v3[1] else v2[1] if v2[1] > v1[1] and v2[1] > v3[1] else v3[1]
+
+        xmin = min(v1[0], v2[0], v3[0])
+        ymin = min(v1[1], v2[1], v3[1])
+        xmax = max(v1[0], v2[0], v3[0])
+        ymax = max(v1[1], v2[1], v3[1])
 
         for x in range(xmin, xmax + 1):
             for y in range(ymin, ymax + 1):

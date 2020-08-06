@@ -147,7 +147,13 @@ if __name__ == '__main__':
                         yStart = int(input('Ingrese la coordenada y desde donde se dibujara el modelo: '))
                         xScale = int(input('Ingrese la escala x con la que se dibujara el modelo: '))
                         yScale = int(input('Ingrese la escala y con la que se dibujara el modelo: '))
-                        img.glModel(namefile, xStart, yStart, xScale, yScale)
+                        zScale = int(input('Ingrese la escala z con la que se dibujara el modelo: '))
+                        res = ''
+                        while res.lower() != 'y' and res.lower() != 'n':
+                            res = input('Desea que se despliegue el wireframe (y/n):').lower()
+
+                        isWire = True if res == 'y' else False
+                        img.glModel(namefile, xStart, yStart, 0, xScale, yScale, zScale, isWire=isWire)
                     except:
                         print('Ingrese valores correctos')
             if op == 10:
