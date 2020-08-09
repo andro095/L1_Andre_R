@@ -1,4 +1,5 @@
-from gl import glColor, ImageCreator, Mobj
+from gl import glColor, ImageCreator
+from  models import TextureReader
 
 menu = "Menú:\n   1. Crear una nueva imagen\n   2. Definir un ViewPort\n   3. Borrar todo punto realizado (Clear())\n" \
        "   4. Cambiar el color del clear\n   5. Dibujar un punto\n   6. Cambiar el color de dibujado\n   7. Imprimir " \
@@ -153,7 +154,22 @@ if __name__ == '__main__':
                             res = input('Desea que se despliegue el wireframe (y/n):').lower()
 
                         isWire = True if res == 'y' else False
-                        img.glModel(namefile, xStart, yStart, 0, xScale, yScale, zScale, isWire=isWire)
+                        res = ''
+                        while res.lower() != 'y' and res.lower() != 'n':
+                            res = input('Desea que se agregue una textura? (y/n):').lower()
+
+                        if res == 'y':
+                            bandera = True
+                            while bandera:
+                                try:
+                                    dir = input('Ingrese la dirección del archivo con su nombre y extensión: ')
+                                    open(dir, 'rb')
+                                    bandera = False
+                                except:
+                                    print('Ingrese una dirección correcta')
+                        texture = TextureReader(dir)
+
+                        img.glModel(namefile, xStart, yStart, 0, xScale, yScale, zScale, texture=texture, isWire=isWire)
                     except:
                         print('Ingrese valores correctos')
             if op == 10:

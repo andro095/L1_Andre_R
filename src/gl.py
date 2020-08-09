@@ -1,5 +1,6 @@
 import struct as st
 import mynumpy as mn
+import models as md
 
 
 # Reserva de espacio de memoria de 1 byte para un char
@@ -24,31 +25,6 @@ def glColor(r, g, b):
 
 def NDCtoWC(size, stp, num):
     return int(((num + 1) * (size / 2)) + stp)
-
-
-# Clase para el modelado de objetos
-class Mobj(object):
-
-    def __init__(self, fname):
-        with open(fname, 'r') as file:
-            self.lines = file.read().splitlines()
-        self.vertex = []
-        self.norms = []
-        self.tcords = []
-        self.faces = []
-        self.load()
-
-    def load(self):
-        opt = [['v', self.vertex], ['vn', self.norms], ['vt', self.tcords]]
-        for l in self.lines:
-            if l:
-                key, v = l.split(' ', 1)
-
-                for op in opt:
-                    if key == op[0]:
-                        op[1].append(list(map(float, v.split(' '))))
-                if key == 'f':
-                    self.faces.append([list(map(int, vt.split('/'))) for vt in v.split(' ')])
 
 
 # Clase para todas las operaciones relacionadas con el escritor de imágenes
@@ -288,8 +264,8 @@ class ImageCreator(object):
                     self.framebuffer[y + ymin][x + xmin] = self.tempframebuffer[y][x]
 
     # Cargamos el modelo A dibujar
-    def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, isWire=False):
-        mymodel = Mobj(namefile)
+    def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, texture=None, isWire=False):
+        mymodel = md.Mobj(namefile)
         for elem in mymodel.faces:
             vCount = len(elem)
             if isWire:
@@ -310,7 +286,16 @@ class ImageCreator(object):
                 b = [round(b[0] * xSc + xSt), round(b[1] * ySc + ySt), round(b[2] * zSc + zSt)]
                 c = [round(c[0] * xSc + xSt), round(c[1] * ySc + ySt), round(c[2] * zSc + zSt)]
 
+                if vCount > 3:
+                    d = mymodel.vertex[elem[3][0] - 1]
+                    d = (round(d[0] * xSc + xSt), round(d[1] * ySc + ySt), round(d[2] * zSc + zSt))
+                    dp = [mymodel.tcords[elem[3][1] - 1][0], mymodel.tcords[elem[3][1] - 1][1]] if texture else [0, 0]
+
                 tnk = [0, 0, 1]
+
+                ap = [mymodel.tcords[elem[0][1] - 1][0], mymodel.tcords[elem[0][1] - 1][1]] if texture else [0, 0]
+                bp = [mymodel.tcords[elem[1][1] - 1][0], mymodel.tcords[elem[1][1] - 1][1]] if texture else [0, 0]
+                cp = [mymodel.tcords[elem[2][1] - 1][0], mymodel.tcords[elem[2][1] - 1][1]] if texture else [0, 0]
 
                 nr = mn.mcross(mn.msubstract(b, a), mn.msubstract(c, a))
                 norm = mn.mnorm(nr)
@@ -319,13 +304,9 @@ class ImageCreator(object):
                 itt = mn.mdot(nrdiv, tnk)
 
                 if itt >= 0:
-                    self.glTriangle(a, b, c, glColor(itt, itt, itt))
-
-                if vCount > 3:
-                    d = mymodel.vertex[elem[3][0] - 1]
-                    d = (round(d[0] * xSc + xSt), round(d[1] * ySc + ySt), round(d[2] * zSc + zSt))
-                    if itt >= 0:
-                        self.glTriangle(a, c, d, glColor(itt, itt, itt))
+                    self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), itt=itt)
+                    if vCount > 3:
+                        self.glTriangle(a, c, d, t=texture, tcords=(ap, cp, dp), itt=itt)
 
     # Calcular coordenadas baricentricas
     def glBcCords(self, point, v1, v2, v3):
@@ -343,9 +324,9 @@ class ImageCreator(object):
                 bcarr.append(-1)
         return bcarr
 
-    def glTriangle(self, v1, v2, v3, color=None):
+    def glTriangle(self, v1, v2, v3, color=None, t=None, tcords=(), itt=1):
         if color is None:
-            color = self.vColor
+            color = glColor(1, 1, 1)
 
         xmin = min(v1[0], v2[0], v3[0])
         ymin = min(v1[1], v2[1], v3[1])
@@ -354,14 +335,30 @@ class ImageCreator(object):
 
         for x in range(xmin, xmax + 1):
             for y in range(ymin, ymax + 1):
+                if y < 0 or y >= self.height or x < 0 or x >= self.width:
+                    continue
                 bcarr = self.glBcCords((x, y), v1, v2, v3)
 
                 if bcarr[0] >= 0 and bcarr[1] >= 0 and bcarr[2] >= 0:
                     dp = v1[2] * bcarr[0] + v2[2] * bcarr[1] + v3[2] * bcarr[2]
-
                     if dp > self.dbf[y][x]:
+
+                        b = color[0] * itt / 255
+                        g = color[1] * itt / 255
+                        r = color[2] * itt / 255
+
+                        if t:
+                            tx = tcords[0][0] * bcarr[0] + tcords[1][0] * bcarr[1] + tcords[2][0] * bcarr[2]
+                            ty = tcords[0][1] * bcarr[0] + tcords[1][1] * bcarr[1] + tcords[2][1] * bcarr[2]
+
+                            tcolor = t.gColor(tx, ty)
+
+                            b *= tcolor[0] / 255
+                            g *= tcolor[1] / 255
+                            r *= tcolor[2] / 255
+
                         self.dbf[y][x] = dp
-                        self.glVertexWC(x, y, color)
+                        self.glVertexWC(x, y, glColor(r, g, b))
 
     # Función para hacer la image
     def glFinish(self, filename):
