@@ -33,6 +33,10 @@ class ImageCreator(object):
     def __init__(self, w, h, bgColor, vColor):
         self.glCreateWindow(w, h, bgColor)
         self.vColor = vColor
+        self.shaderfunc = None
+
+    def setShaderFunc(self, func):
+        self.shaderfunc = func
 
     # Creador del framebuffer
     def glCreateWindow(self, w, h, bg):
@@ -263,6 +267,39 @@ class ImageCreator(object):
                 if self.tempframebuffer[y][x] == self.vColor:
                     self.framebuffer[y + ymin][x + xmin] = self.tempframebuffer[y][x]
 
+    # Función para el toon shader
+    def glToon(self, bcords, tcords, normals, color, texture=None, itt=[0, 0, 1]):
+        b = color[0] / 255
+        g = color[1] / 255
+        r = color[2] / 255
+
+        if texture:
+            tx = tcords[0][0] * bcords[0] + tcords[1][0] * bcords[1] + tcords[2][0] * bcords[2]
+            ty = tcords[0][1] * bcords[0] + tcords[1][1] * bcords[1] + tcords[2][1] * bcords[2]
+
+            tcolor = texture.gColor(tx, ty)
+
+            b *= tcolor[0] / 255
+            g *= tcolor[1] / 255
+            r *= tcolor[2] / 255
+
+            nx = normals[0][0] * bcords[0] + normals[1][0] * bcords[1] + normals[2][0] * bcords[2]
+            ny = normals[0][1] * bcords[0] + normals[1][1] * bcords[1] + normals[2][1] * bcords[2]
+            nz = normals[0][2] * bcords[0] + normals[1][2] * bcords[1] + normals[2][2] * bcords[2]
+
+            norm = [nx, ny, nz]
+            itt = mn.mdot(norm, itt)
+
+            for x in range(7):
+                if 0.15 * (x + 1) <= itt <= 0.15 * (x + 2):
+                    itt = 0.15 * (x + 1)
+
+            b *= itt
+            g *= itt
+            r *= itt
+
+            return [r, g, b] if itt > 0 else [0, 0, 0]
+
     # Cargamos el modelo A dibujar
     def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, texture=None, isWire=False):
         mymodel = md.Mobj(namefile)
@@ -290,23 +327,19 @@ class ImageCreator(object):
                     d = mymodel.vertex[elem[3][0] - 1]
                     d = (round(d[0] * xSc + xSt), round(d[1] * ySc + ySt), round(d[2] * zSc + zSt))
                     dp = [mymodel.tcords[elem[3][1] - 1][0], mymodel.tcords[elem[3][1] - 1][1]] if texture else [0, 0]
-
-                tnk = [0, 0, 1]
+                    dp2 = mymodel.norms[elem[3][2] - 1]
 
                 ap = [mymodel.tcords[elem[0][1] - 1][0], mymodel.tcords[elem[0][1] - 1][1]] if texture else [0, 0]
                 bp = [mymodel.tcords[elem[1][1] - 1][0], mymodel.tcords[elem[1][1] - 1][1]] if texture else [0, 0]
                 cp = [mymodel.tcords[elem[2][1] - 1][0], mymodel.tcords[elem[2][1] - 1][1]] if texture else [0, 0]
 
-                nr = mn.mcross(mn.msubstract(b, a), mn.msubstract(c, a))
-                norm = mn.mnorm(nr)
-                nrdiv = [elem / norm for elem in nr]
+                ap2 = mymodel.norms[elem[0][2] - 1]
+                bp2 = mymodel.norms[elem[1][2] - 1]
+                cp2 = mymodel.norms[elem[2][2] - 1]
 
-                itt = mn.mdot(nrdiv, tnk)
-
-                if itt >= 0:
-                    self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), itt=itt)
-                    if vCount > 3:
-                        self.glTriangle(a, c, d, t=texture, tcords=(ap, cp, dp), itt=itt)
+                self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), norms=(ap2, bp2, cp2))
+                if vCount > 3:
+                    self.glTriangle(a, c, d, t=texture, tcords=(ap, cp, dp), norms=(ap2, cp2, dp2))
 
     # Calcular coordenadas baricentricas
     def glBcCords(self, point, v1, v2, v3):
@@ -324,7 +357,7 @@ class ImageCreator(object):
                 bcarr.append(-1)
         return bcarr
 
-    def glTriangle(self, v1, v2, v3, color=None, t=None, tcords=(), itt=1):
+    def glTriangle(self, v1, v2, v3, color=None, t=None, tcords=(), norms=()):
         if color is None:
             color = glColor(1, 1, 1)
 
@@ -342,23 +375,10 @@ class ImageCreator(object):
                 if bcarr[0] >= 0 and bcarr[1] >= 0 and bcarr[2] >= 0:
                     dp = v1[2] * bcarr[0] + v2[2] * bcarr[1] + v3[2] * bcarr[2]
                     if dp > self.dbf[y][x]:
-
-                        b = color[0] * itt / 255
-                        g = color[1] * itt / 255
-                        r = color[2] * itt / 255
-
-                        if t:
-                            tx = tcords[0][0] * bcarr[0] + tcords[1][0] * bcarr[1] + tcords[2][0] * bcarr[2]
-                            ty = tcords[0][1] * bcarr[0] + tcords[1][1] * bcarr[1] + tcords[2][1] * bcarr[2]
-
-                            tcolor = t.gColor(tx, ty)
-
-                            b *= tcolor[0] / 255
-                            g *= tcolor[1] / 255
-                            r *= tcolor[2] / 255
+                        _color = self.shaderfunc(bcarr, tcords, norms, color, texture=t)
 
                         self.dbf[y][x] = dp
-                        self.glVertexWC(x, y, glColor(r, g, b))
+                        self.glVertexWC(x, y, glColor(_color[0], _color[1], _color[2]))
 
     # Función para hacer la image
     def glFinish(self, filename):

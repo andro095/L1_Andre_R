@@ -1,5 +1,6 @@
 from gl import ImageCreator, glColor
 from models import TextureReader
+from myshad import *
 import mynumpy as np
 
 r = ImageCreator(1000, 1000, glColor(0, 0, 0), glColor(1, 1, 1))
@@ -17,6 +18,9 @@ r = ImageCreator(1000, 1000, glColor(0, 0, 0), glColor(1, 1, 1))
 #print(np.mcross(arr, arr2)/np.mnorm([-4, -3, -2, -1, 0, 1, 2, 3, 4]))
 
 t = TextureReader('model.bmp')
+
+r.setShaderFunc(myToon)
+
 r.glModel('model.obj', 500, 500, 0, 300, 300, 300, texture=t)
 
-r.glFinish('hosli.bmp')
+r.glFinish('shadderToon.bmp')

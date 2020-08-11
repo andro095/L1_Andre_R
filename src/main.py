@@ -1,5 +1,6 @@
 from gl import glColor, ImageCreator
 from  models import TextureReader
+from myshad import *
 
 menu = "Menú:\n   1. Crear una nueva imagen\n   2. Definir un ViewPort\n   3. Borrar todo punto realizado (Clear())\n" \
        "   4. Cambiar el color del clear\n   5. Dibujar un punto\n   6. Cambiar el color de dibujado\n   7. Imprimir " \
@@ -168,6 +169,9 @@ if __name__ == '__main__':
                                 except:
                                     print('Ingrese una dirección correcta')
                         texture = TextureReader(dir)
+
+                        print('Se desplegara con un Toon Shader')
+                        img.setShaderFunc(myToon)
 
                         img.glModel(namefile, xStart, yStart, 0, xScale, yScale, zScale, texture=texture, isWire=isWire)
                     except:
