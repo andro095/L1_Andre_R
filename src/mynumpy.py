@@ -34,3 +34,22 @@ def mnorm(arr):
 # Producto escalar entre vectores
 def mdot(arr, arr2):
     return sum([arr[x] * arr2[x] for x in range(len(arr))])
+
+
+# Multiplicación de matrices
+def mmul(arr, arr2):
+    matrizres = [[0 for x in range(len(arr2[0]))] for y in range(len(arr))]
+    try:
+        for elem in arr:
+            if len(elem) != len(arr2):
+                raise Exception
+        for x in range(len(arr)):
+            for y in range(len(arr2[0])):
+                for z in range(len(arr2)):
+                    matrizres[x][y] += arr[x][z] * arr2[z][y]
+        return matrizres
+
+    except Exception as e:
+        print('Error en alguna de las matrices')
+        exit(1)
+        return ''

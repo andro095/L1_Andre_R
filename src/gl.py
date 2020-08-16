@@ -1,6 +1,7 @@
 import struct as st
 import mynumpy as mn
 import models as md
+from numpy import sin, cos, deg2rad
 
 
 # Reserva de espacio de memoria de 1 byte para un char
@@ -267,9 +268,59 @@ class ImageCreator(object):
                 if self.tempframebuffer[y][x] == self.vColor:
                     self.framebuffer[y + ymin][x + xmin] = self.tempframebuffer[y][x]
 
+    # Crearemos la matrix del modelo
+    def glMMatrix(self, trns, scl, rot):
+        tMatrix = [[1, 0, 0, trns[0]],
+                   [0, 1, 0, trns[1]],
+                   [0, 0, 1, trns[2]],
+                   [0, 0, 0, 1]]
+
+        sMatrix = [[scl[0], 0, 0, 0],
+                   [0, scl[1], 0, 0],
+                   [0, 0, scl[2], 0],
+                   [0, 0, 0, 1]]
+
+        rMatrix = self.glRMatrix(rot)
+
+        return mn.mmul(mn.mmul(tMatrix, rMatrix), sMatrix)
+
+    # Crearemos la matrix de rotación
+    def glRMatrix(self, rot):
+        rtx = deg2rad(rot[0])
+        rty = deg2rad(rot[1])
+        rtz = deg2rad(rot[2])
+
+        mRtx = [[1, 0, 0, 0],
+                [0, cos(rtx), -sin(rtx), 0],
+                [0, sin(rtx), cos(rtx), 0],
+                [0, 0, 0, 1]]
+
+        mRty = [[cos(rty), 0, sin(rty), 0],
+                [0, 1, 0, 0],
+                [-sin(rty), 0, cos(rty), 0],
+                [0, 0, 0, 1]]
+
+        mRtz = [[cos(rtz), -sin(rtz), 0, 0],
+                [sin(rtz), cos(rtz), 0, 0],
+                [0, 0, 1, 0],
+                [0, 0, 0, 1]]
+
+        return mn.mmul(mn.mmul(mRtx, mRty), mRtz)
+
     # Cargamos el modelo A dibujar
-    def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, texture=None, isWire=False):
+    def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, xRt, yRt, zRt, texture=None, isWire=False):
         mymodel = md.Mobj(namefile)
+
+        mMatrix = self.glMMatrix([xSt, ySt, zSt], [xSc, ySc, zSc], [xRt, yRt, zRt])
+
+        rMatrix = self.glRMatrix([xRt, yRt, zRt])
+
+        print(mMatrix)
+
+        print(rMatrix)
+
+        exit(1)
+
         for elem in mymodel.faces:
             vCount = len(elem)
             if isWire:
