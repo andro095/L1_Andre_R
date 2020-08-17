@@ -4,7 +4,7 @@ from myshad import *
 from mynumpy import *
 import mynumpy as np
 
-r = ImageCreator(1500, 500, glColor(0, 0, 0), glColor(1, 1, 1))
+r = ImageCreator(500, 500, glColor(0, 0, 0), glColor(1, 1, 1))
 
 # Este es solo un main de pruebas el otro máin es el real
 
@@ -13,21 +13,15 @@ r = ImageCreator(1500, 500, glColor(0, 0, 0), glColor(1, 1, 1))
 
 # r.glTriangle()
 
-arr = [[1, 0], [1, 0]]
-arr2 = [[1, 0], [1, 0]]
-
-print(arr @ arr2)
 
 
-
-
-#t = TextureReader('model.bmp')
+t = TextureReader('model.bmp')
 #
-#r.setShaderFunc(myToon)
+r.setShaderFunc(myToon)
 #
-#r.glModel('model.obj', 250, 250, 0, 150, 150, 150, 0, 90, 0, texture=t)
+r.glModel('model.obj', 250, 250, 0, 150, 150, 150, 0, 90, 0, texture=t)
 #
-##r.glFinish('shadderToon.bmp')
+r.glFinish('Final.bmp')
 #
 # r.setShaderFunc(myStatic)
 #

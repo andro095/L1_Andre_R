@@ -307,6 +307,17 @@ class ImageCreator(object):
 
         return mn.mmul(mn.mmul(mRtx, mRty), mRtz)
 
+    # función de transformación
+    def glTrans(self, vt, mMatrix):
+        vert = [[vt[0]], [vt[1]], [vt[2]], [1]]
+        tMat = mn.mmul(mMatrix, vert)
+
+        rVert = [tMat[0][0] / tMat[3][0],
+                 tMat[1][0] / tMat[3][0],
+                 tMat[2][0] / tMat[3][0]]
+
+        return rVert
+
     # Cargamos el modelo A dibujar
     def glModel(self, namefile, xSt, ySt, zSt, xSc, ySc, zSc, xRt, yRt, zRt, texture=None, isWire=False):
         mymodel = md.Mobj(namefile)
@@ -314,12 +325,6 @@ class ImageCreator(object):
         mMatrix = self.glMMatrix([xSt, ySt, zSt], [xSc, ySc, zSc], [xRt, yRt, zRt])
 
         rMatrix = self.glRMatrix([xRt, yRt, zRt])
-
-        print(mMatrix)
-
-        print(rMatrix)
-
-        exit(1)
 
         for elem in mymodel.faces:
             vCount = len(elem)
@@ -337,15 +342,17 @@ class ImageCreator(object):
                 b = mymodel.vertex[elem[1][0] - 1]
                 c = mymodel.vertex[elem[2][0] - 1]
 
-                a = [round(a[0] * xSc + xSt), round(a[1] * ySc + ySt), round(a[2] * zSc + zSt)]
-                b = [round(b[0] * xSc + xSt), round(b[1] * ySc + ySt), round(b[2] * zSc + zSt)]
-                c = [round(c[0] * xSc + xSt), round(c[1] * ySc + ySt), round(c[2] * zSc + zSt)]
+                a = self.glTrans(a, mMatrix)
+                b = self.glTrans(b, mMatrix)
+                c = self.glTrans(c, mMatrix)
 
                 if vCount > 3:
                     d = mymodel.vertex[elem[3][0] - 1]
-                    d = (round(d[0] * xSc + xSt), round(d[1] * ySc + ySt), round(d[2] * zSc + zSt))
+                    d = self.glTrans(d, mMatrix)
                     dp = [mymodel.tcords[elem[3][1] - 1][0], mymodel.tcords[elem[3][1] - 1][1]] if texture else [0, 0]
                     dp2 = mymodel.norms[elem[3][2] - 1]
+                    dp2 = self.glTrans(dp2, rMatrix)
+                    print(dp2)
 
                 ap = [mymodel.tcords[elem[0][1] - 1][0], mymodel.tcords[elem[0][1] - 1][1]] if texture else [0, 0]
                 bp = [mymodel.tcords[elem[1][1] - 1][0], mymodel.tcords[elem[1][1] - 1][1]] if texture else [0, 0]
@@ -354,6 +361,11 @@ class ImageCreator(object):
                 ap2 = mymodel.norms[elem[0][2] - 1]
                 bp2 = mymodel.norms[elem[1][2] - 1]
                 cp2 = mymodel.norms[elem[2][2] - 1]
+
+                ap2 = self.glTrans(ap2, rMatrix)
+                bp2 = self.glTrans(bp2, rMatrix)
+                cp2 = self.glTrans(cp2, rMatrix)
+
 
                 self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), norms=(ap2, bp2, cp2))
                 if vCount > 3:
@@ -379,10 +391,12 @@ class ImageCreator(object):
         if color is None:
             color = glColor(1, 1, 1)
 
-        xmin = min(v1[0], v2[0], v3[0])
-        ymin = min(v1[1], v2[1], v3[1])
-        xmax = max(v1[0], v2[0], v3[0])
-        ymax = max(v1[1], v2[1], v3[1])
+        xmin = round(min(v1[0], v2[0], v3[0]))
+        ymin = round(min(v1[1], v2[1], v3[1]))
+        xmax = round(max(v1[0], v2[0], v3[0]))
+        ymax = round(max(v1[1], v2[1], v3[1]))
+
+
 
         for x in range(xmin, xmax + 1):
             for y in range(ymin, ymax + 1):
