@@ -1,7 +1,7 @@
 import struct as st
 import mynumpy as mn
 import models as md
-from numpy import sin, cos, deg2rad
+from numpy import sin, cos, tan, deg2rad, pi
 
 
 # Reserva de espacio de memoria de 1 byte para un char
@@ -36,6 +36,9 @@ class ImageCreator(object):
         self.vColor = vColor
         self.shaderfunc = None
 
+        self.glVMatrix([0, 0, 0], [0, 0, 0])
+        self.glPMatrix(0.1, 1000, 60)
+
     def setShaderFunc(self, func):
         self.shaderfunc = func
 
@@ -55,12 +58,18 @@ class ImageCreator(object):
         self.VPheight = self.height - y if h == 0 else h
         self.VPXstart = x
         self.VPYstart = y
+
+        self.VPMatrix = [[w / 2, 0, 0, x + w / 2],
+                         [0, h / 2, 0, y + h / 2],
+                         [0, 0, 0.5, 0.5],
+                         [0, 0, 0, 1]]
+
         return True
 
     # Aclarar el background con su color
     def glClear(self):
         self.framebuffer = [[self.bgcolor for x in range(self.width)] for y in range(self.height)]
-        self.dbf = [[-float('inf') for x in range(self.width)] for y in range(self.height)]
+        self.dbf = [[float('inf') for x in range(self.width)] for y in range(self.height)]
 
     # Cambiar el bgcolor
     def glClearColor(self, r, g, b):
@@ -268,6 +277,41 @@ class ImageCreator(object):
                 if self.tempframebuffer[y][x] == self.vColor:
                     self.framebuffer[y + ymin][x + xmin] = self.tempframebuffer[y][x]
 
+    # Creamos la función lookAt
+    def glLookAt(self, me, cPos):
+        fward = mn.msubstract(cPos, me)
+        fwardnorm = mn.mnorm(fward)
+        fwarddiv = [fward[x] / fwardnorm for x in range(len(fward))]
+
+        rt = mn.mcross([0, 1, 0], fwarddiv)
+        rtnorm = mn.mnorm(rt)
+        rtdiv = [rt[x] / rtnorm for x in range(len(rt))]
+
+        up = mn.mcross(fwarddiv, rtdiv)
+        upnorm = mn.mnorm(up)
+        updiv = [up[x] / upnorm for x in range(len(up))]
+
+        cMatrix = [[rtdiv[0], updiv[0], fwarddiv[0], cPos[0]],
+                   [rtdiv[1], updiv[1], fwarddiv[1], cPos[1]],
+                   [rtdiv[2], updiv[2], fwarddiv[2], cPos[2]],
+                   [0, 0, 0, 1]]
+
+        self.vMatrix = mn.minv(cMatrix)
+
+    # Creamos la ViewMatrix
+    def glVMatrix(self, cPos, cRot):
+        cMatrix = self.glMMatrix(cPos, [1, 1, 1], cRot)
+        self.vMatrix = mn.minv(cMatrix)
+
+    # Creamos la matriz de proyección
+    def glPMatrix(self, n, f, fov):
+        t = tan((fov * pi / 180) / 2) * n
+        r = t * self.VPwidth / self.VPheight
+        self.pMatrix = [[n / r, 0, 0, 0],
+                        [0, n / t, 0, 0],
+                        [0, 0, -(f + n) / (f - n), -(2 * f * n) / (f - n)],
+                        [0, 0, -1, 0]]
+
     # Crearemos la matrix del modelo
     def glMMatrix(self, trns, scl, rot):
         tMatrix = [[1, 0, 0, trns[0]],
@@ -307,14 +351,25 @@ class ImageCreator(object):
 
         return mn.mmul(mn.mmul(mRtx, mRty), mRtz)
 
-    # función de transformación
+    # Función de transformación
     def glTrans(self, vt, mMatrix):
         vert = [[vt[0]], [vt[1]], [vt[2]], [1]]
-        tMat = mn.mmul(mMatrix, vert)
+        tMat = mn.mmul(mn.mmul(mn.mmul(mn.mmul(self.VPMatrix, self.pMatrix), self.vMatrix), mMatrix), vert)
 
         rVert = [tMat[0][0] / tMat[3][0],
                  tMat[1][0] / tMat[3][0],
                  tMat[2][0] / tMat[3][0]]
+
+        return rVert
+
+    # función de transformación
+    def glDirTrans(self, vt, mMatrix):
+        vert = [[vt[0]], [vt[1]], [vt[2]], [0]]
+        tMat = mn.mmul(mMatrix, vert)
+
+        rVert = [tMat[0][0],
+                 tMat[1][0],
+                 tMat[2][0]]
 
         return rVert
 
@@ -351,8 +406,7 @@ class ImageCreator(object):
                     d = self.glTrans(d, mMatrix)
                     dp = [mymodel.tcords[elem[3][1] - 1][0], mymodel.tcords[elem[3][1] - 1][1]] if texture else [0, 0]
                     dp2 = mymodel.norms[elem[3][2] - 1]
-                    dp2 = self.glTrans(dp2, rMatrix)
-                    print(dp2)
+                    dp2 = self.glDirTrans(dp2, rMatrix)
 
                 ap = [mymodel.tcords[elem[0][1] - 1][0], mymodel.tcords[elem[0][1] - 1][1]] if texture else [0, 0]
                 bp = [mymodel.tcords[elem[1][1] - 1][0], mymodel.tcords[elem[1][1] - 1][1]] if texture else [0, 0]
@@ -362,10 +416,9 @@ class ImageCreator(object):
                 bp2 = mymodel.norms[elem[1][2] - 1]
                 cp2 = mymodel.norms[elem[2][2] - 1]
 
-                ap2 = self.glTrans(ap2, rMatrix)
-                bp2 = self.glTrans(bp2, rMatrix)
-                cp2 = self.glTrans(cp2, rMatrix)
-
+                ap2 = self.glDirTrans(ap2, rMatrix)
+                bp2 = self.glDirTrans(bp2, rMatrix)
+                cp2 = self.glDirTrans(cp2, rMatrix)
 
                 self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), norms=(ap2, bp2, cp2))
                 if vCount > 3:
@@ -396,8 +449,6 @@ class ImageCreator(object):
         xmax = round(max(v1[0], v2[0], v3[0]))
         ymax = round(max(v1[1], v2[1], v3[1]))
 
-
-
         for x in range(xmin, xmax + 1):
             for y in range(ymin, ymax + 1):
                 if y < 0 or y >= self.height or x < 0 or x >= self.width:
@@ -406,8 +457,12 @@ class ImageCreator(object):
 
                 if bcarr[0] >= 0 and bcarr[1] >= 0 and bcarr[2] >= 0:
                     dp = v1[2] * bcarr[0] + v2[2] * bcarr[1] + v3[2] * bcarr[2]
-                    if dp > self.dbf[y][x]:
-                        _color = self.shaderfunc(bcarr, tcords, norms, color, texture=t)
+                    if dp < self.dbf[y][x] and -1 <= dp <= 1:
+
+                        if self.shaderfunc:
+                            _color = self.shaderfunc(bcarr, tcords, norms, color, texture=t)
+                        else:
+                            _color = [color[2], color[1], color[0]] or self.vColor
 
                         self.dbf[y][x] = dp
                         self.glVertexWC(x, y, glColor(_color[0], _color[1], _color[2]))

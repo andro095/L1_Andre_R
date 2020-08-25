@@ -53,3 +53,52 @@ def mmul(arr, arr2):
         print('Error en alguna de las matrices')
         exit(1)
         return ''
+
+
+# Inversa de una matriz
+def minv(arr):
+    res = [[pow(-1, x + y) for x in range(len(arr))] for y in range(len(arr))]
+    darr = mdet(arr)
+    for x in range(len(arr)):
+        for y in range(len(arr)):
+            tarr = []
+            for z in range(len(arr)):
+                if z != x:
+                    filarr = []
+                    for w in range(len(arr)):
+                        if w != y:
+                            filarr.append(arr[z][w])
+                    tarr.append(filarr)
+            res[x][y] *= mdet(tarr) / darr
+    return mtrans(res)
+
+
+# Transpuesta de una matriz
+def mtrans(arr):
+    return [[arr[x][y] for x in range(len(arr))] for y in range(len(arr))]
+
+
+# Determinante de una matriz
+def mdet(arr):
+    alen = len(arr)
+    if alen == 1:
+        return arr[0][0]
+    elif alen == 2:
+        return arr[0][0] * arr[1][1] - arr[0][1] * arr[1][0]
+    elif alen == 3:
+        return arr[0][0] * arr[1][1] * arr[2][2] + arr[0][1] * arr[1][2] * arr[2][0] + arr[0][2] * arr[1][0] * arr[2][1] \
+               - arr[0][0] * arr[1][2] * arr[2][1] - arr[0][1] * arr[1][0] * arr[2][2] - arr[0][2] * arr[1][1] * arr[2][
+                   0]
+    else:
+        res = [pow(-1, x) * arr[0][x] for x in range(len(arr))]
+        for y in range(alen):
+            tarr = []
+            for z in range(len(arr)):
+                if z != 0:
+                    filarr = []
+                    for w in range(len(arr)):
+                        if w != y:
+                            filarr.append(arr[z][w])
+                    tarr.append(filarr)
+            res[y] *= mdet(tarr)
+        return sum(res)
