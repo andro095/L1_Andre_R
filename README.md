@@ -1,5 +1,5 @@
 # L1_Andre_R
-## Laboratorio 1, Graficas por Computadoras
+## Laboratorios Primera Parte, Graficas por Computadoras
 ## André Rodríguez 18332
 
 ### Recordatorios
