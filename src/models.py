@@ -21,17 +21,20 @@ class Mobj(object):
         opt = [['v', self.vertex], ['vn', self.norms], ['vt', self.tcords]]
         for l in self.lines:
             if l:
-                key, v = l.split(' ', 1)
-
-                for op in opt:
-                    if key == op[0]:
-                        op[1].append(list(map(float, v.split(' '))))
-                if key == 'f':
-                    self.faces.append([list(map(int, vt.split('/'))) for vt in v.split(' ')])
+                try:
+                    key, v = l.split(' ', 1)
+                    v = v.rstrip()
+                    v = v.lstrip()
+                    for op in opt:
+                        if key == op[0]:
+                            op[1].append(list(map(float, v.split(' '))))
+                    if key == 'f':
+                        self.faces.append([list(map(int, vt.split('/'))) for vt in v.split(' ')])
+                except:
+                    continue
 
 
 # Clase para leer las texturas
-
 class TextureReader(object):
     def __init__(self, filename):
         self.framebuffer = []

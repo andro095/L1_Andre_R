@@ -35,10 +35,17 @@ class ImageCreator(object):
         self.glCreateWindow(w, h, bgColor)
         self.vColor = vColor
         self.shaderfunc = None
+        self.normMap = None
+        self.itt = [0, 0, 1]
 
         self.glVMatrix([0, 0, 0], [0, 0, 0])
         self.glPMatrix(0.1, 1000, 60)
 
+    #Setear el NormalMap
+    def setNormalMap(self, nMap):
+        self.normMap = nMap
+
+    # Setear el shader
     def setShaderFunc(self, func):
         self.shaderfunc = func
 
@@ -65,6 +72,13 @@ class ImageCreator(object):
                          [0, 0, 0, 1]]
 
         return True
+
+    # Función para agregar un fondo
+    def glBackground(self, namefile):
+        background = md.TextureReader(namefile)
+        for x in range(background.h):
+            for y in range(background.w):
+                self.glVertexWC(y, x, background.framebuffer[x][y])
 
     # Aclarar el background con su color
     def glClear(self):
@@ -354,7 +368,18 @@ class ImageCreator(object):
     # Función de transformación
     def glTrans(self, vt, mMatrix):
         vert = [[vt[0]], [vt[1]], [vt[2]], [1]]
-        tMat = mn.mmul(mn.mmul(mn.mmul(mn.mmul(self.VPMatrix, self.pMatrix), self.vMatrix), mMatrix), vert)
+        tMat = mn.mmul(mMatrix, vert)
+
+        rVert = [tMat[0][0] / tMat[3][0],
+                 tMat[1][0] / tMat[3][0],
+                 tMat[2][0] / tMat[3][0]]
+
+        return rVert
+
+    # Función de transformación
+    def glCamTrans(self, vt):
+        vert = [[vt[0]], [vt[1]], [vt[2]], [1]]
+        tMat = mn.mmul(mn.mmul(mn.mmul(self.VPMatrix, self.pMatrix), self.vMatrix), vert)
 
         rVert = [tMat[0][0] / tMat[3][0],
                  tMat[1][0] / tMat[3][0],
@@ -401,9 +426,19 @@ class ImageCreator(object):
                 b = self.glTrans(b, mMatrix)
                 c = self.glTrans(c, mMatrix)
 
+                A = a
+                B = b
+                C = c
+
+                a = self.glCamTrans(a)
+                b = self.glCamTrans(b)
+                c = self.glCamTrans(c)
+
                 if vCount > 3:
                     d = mymodel.vertex[elem[3][0] - 1]
                     d = self.glTrans(d, mMatrix)
+                    D = d
+                    d = self.glCamTrans(d)
                     dp = [mymodel.tcords[elem[3][1] - 1][0], mymodel.tcords[elem[3][1] - 1][1]] if texture else [0, 0]
                     dp2 = mymodel.norms[elem[3][2] - 1]
                     dp2 = self.glDirTrans(dp2, rMatrix)
@@ -420,9 +455,9 @@ class ImageCreator(object):
                 bp2 = self.glDirTrans(bp2, rMatrix)
                 cp2 = self.glDirTrans(cp2, rMatrix)
 
-                self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), norms=(ap2, bp2, cp2))
+                self.glTriangle(a, b, c, t=texture, tcords=(ap, bp, cp), norms=(ap2, bp2, cp2), verts=(A, B, C))
                 if vCount > 3:
-                    self.glTriangle(a, c, d, t=texture, tcords=(ap, cp, dp), norms=(ap2, cp2, dp2))
+                    self.glTriangle(a, c, d, t=texture, tcords=(ap, cp, dp), norms=(ap2, cp2, dp2), verts=(A, C, D))
 
     # Calcular coordenadas baricentricas
     def glBcCords(self, point, v1, v2, v3):
@@ -440,7 +475,7 @@ class ImageCreator(object):
                 bcarr.append(-1)
         return bcarr
 
-    def glTriangle(self, v1, v2, v3, color=None, t=None, tcords=(), norms=()):
+    def glTriangle(self, v1, v2, v3, color=None, t=None, tcords=(), norms=(), verts=()):
         if color is None:
             color = glColor(1, 1, 1)
 
@@ -455,12 +490,15 @@ class ImageCreator(object):
                     continue
                 bcarr = self.glBcCords((x, y), v1, v2, v3)
 
+
+
                 if bcarr[0] >= 0 and bcarr[1] >= 0 and bcarr[2] >= 0:
                     dp = v1[2] * bcarr[0] + v2[2] * bcarr[1] + v3[2] * bcarr[2]
+
                     if dp < self.dbf[y][x] and -1 <= dp <= 1:
 
                         if self.shaderfunc:
-                            _color = self.shaderfunc(bcarr, tcords, norms, color, texture=t)
+                            _color = self.shaderfunc(verts, bcarr, tcords, norms, color, texture=t, normMap=self.normMap, itt=self.itt)
                         else:
                             _color = [color[2], color[1], color[0]] or self.vColor
 

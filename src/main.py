@@ -4,10 +4,10 @@ from myshad import *
 
 menu = "Menú:\n   1. Crear una nueva imagen\n   2. Definir un ViewPort\n   3. Borrar todo punto realizado (Clear())\n" \
        "   4. Cambiar el color del clear\n   5. Dibujar un punto\n   6. Cambiar el color de dibujado\n   7. Imprimir " \
-       "la imagen\n   8. Realizar una linea\n   9. Dibujar un modelo obj\n   10. Rellenar un poligono\n   11. Salir " \
-       "del programa\nIngrese una opción: "
+       "la imagen\n   8. Realizar una linea\n   9. Dibujar un modelo obj\n   10. Rellenar un poligono\n   11. " \
+       "Proyecto #1 (No tiene que crear imagen con este por su cuenta)\n   12. Salir del programa\nIngrese una opción: "
 
-oplimit = 11
+oplimit = 12
 
 
 def create_image():
@@ -222,6 +222,75 @@ if __name__ == '__main__':
                             img.glPolygon(arr)
                         else:
                             print('No ingreso los suficientes vertices')
+
+            if op == 11:
+                print("Creando la imagen...")
+                r = ImageCreator(564, 376, glColor(0, 0, 0), glColor(1, 1, 1))
+                print('Imagen Creada')
+                print('Añadiendo Fondo')
+                r.glBackground('./backgrounds/living_room.bmp')
+                print('Fondo Añadido')
+                print('Empezamos a cargar modelos')
+                print('Empezamos con el Modelo del gato. Este modelo es el que contiene el mapa de normales')
+                print('Cargamos la textura')
+                t = TextureReader('./textures/CatMac_C.bmp')
+                print('Textura Cargada')
+                print('Cargando el mapa normal')
+                r.setNormalMap(TextureReader('./normalmaps/CatMac_N.bmp'))
+                print('Mapa normal cargado')
+                print('Configurando el shadder')
+                r.setShaderFunc(myNormal)
+                print('Shadder Configurado')
+                print('Cargamos el modelo del gato')
+                r.glModel('./objmodels/CatMac.obj', -2.8, -1.2, -5, 3, 3, 3, 0, 45, 0, texture=t)
+                print('Modelo cargado')
+                print('Seguimos con el hombre de negocios')
+                print('Cargamos su textura')
+                t = TextureReader('./textures/man.bmp')
+                print('Textura cargada')
+                print('Configurando el shadder')
+                r.setShaderFunc(myGray)
+                print('Shadder configurado')
+                print('Cargamos el modelo del hombre')
+                r.glModel('./objmodels/man.obj', -1.22, -1.75, -4, 0.02, 0.02, 0.02, 0, 0, 0, texture=t)
+                print('Modelo cargado')
+                print('Seguimos con el joven')
+                print('Cargamos su textura')
+                t = TextureReader('./textures/ivan.bmp')
+                print('Textura cargada')
+                print('Configurando el shadder')
+                r.setShaderFunc(myInvert)
+                print('Shadder configurado')
+                print('Cargamos el modelo del hombre')
+                r.glModel('./objmodels/ivan.obj', 2.6, -1.75, -4, 0.002, 0.002, 0.002, 0, -90, 0, texture=t)
+                print('Modelo cargado')
+                print('Seguimos con la mesa')
+                print('Cargamos su textura')
+                t = TextureReader('./textures/table.bmp')
+                print('Textura cargada')
+                print('Configurando el shadder')
+                r.setShaderFunc(myRainbow)
+                print('Shadder configurado')
+                print('Cargamos el modelo de la mesa')
+                r.glModel('./objmodels/table.obj', 0.5, -1.75, -4, 0.04, 0.04, 0.04, 0, 0, 0, texture=t)
+                print('Modelo cargado')
+                print('Finalizamos con la esfera')
+                print('Cargamos su textura')
+                t = TextureReader('./textures/table.bmp')
+                print('Textura cargada')
+                print('Configurando el shadder')
+                r.setShaderFunc(myStatic)
+                print('Shadder configurado')
+                print('Cargamos el modelo de la esfera')
+                r.glModel('./objmodels/sphere.OBJ', 0.5, -1, -4, 0.003, 0.003, 0.003, 0, 0, 0, texture=t)
+                print('Modelo cargado')
+                print('Render terminado')
+                print('Creando bmp con nombre Proyecto1.bmp')
+                r.glFinish('./screenshots/Proyecto1.bmp')
+                print('Bmp creado')
+                print('Encontrará el resultado en la carpeta de screenshots.')
+                print('Feliz dia')
+
 
         except:
             print("Ingrese una opción válida")
